@@ -14,7 +14,17 @@
     * [Bubbling](#bubbling)
     * [stopPropagation](#stopPropagation)
     * [Capturing](#Capturing)
-    
+1. [React hooks](#react-hooks)
+    * [useState](#useState)
+    * [useEffect](#useEffect)
+    * [useContext](#useContext)
+    * [useReducer](#useReducer)
+    * [useMemo](#useMemo)
+        * [React.memo](#React.memo)
+    * [useCallback](#useCallback)
+    * [useRef](#useRef)
+        *[Callback-Ref](#Callback-Ref)
+    * [useLayoutEffect](#useLayoutEffect)
    
     
 # Promise
@@ -397,3 +407,533 @@ elem.addEventListener( "click" , function(event){
 Чтобы поймать событие на стадии перехвата, нужно использовать третий аргумент addEventListener:
 *   Если аргумент true, то событие будет перехвачено по дороге вниз.
 *   Если аргумент false, то событие будет поймано при всплытии.
+
+[Демо](https://yahevin.github.io/react_project_foundation/dist/events)
+
+# React hooks
+
+Хуки — нововведение в React 16.8, 
+которое позволяет использовать состояние 
+и другие возможности React с функциональными компонентами.
+Хуки — это функции, с помощью которых вы можете «подцепиться» к состоянию 
+и методам жизненного цикла React из функциональных компонентов.
+
+## useState
+
+useState принимает один аргумент - начальное значение состояния, 
+и создает переменную - ссылку на текущее состояние компонента и его сеттер.
+Таким образом обновление состояние через сеттер вызывает рендер метод компонента,
+а прямое присваивание нового значения - нет.
+
+```js
+function ExampleWithManyStates() {
+  // Объявляем несколько переменных состояния!
+  const [age, setAge] = useState(42);
+  const [fruit, setFruit] = useState('банан');
+  const [todos, setTodos] = useState([{ text: 'Изучить хуки' }]);
+  // ...
+}
+```
+
+Если новое состояние вычисляется с использованием предыдущего состояния, 
+в setState можно передать функцию. Функция получит предыдущее значение и вернёт обновлённое значение.
+
+```typescript jsx
+function Counter({initialCount}) {
+  const [count, setCount] = useState(initialCount);
+  return (
+    <button onClick={() => setCount(prevCount => prevCount + 1)}>+</button>
+  );
+}
+```
+
+Чтобы повторно не создавать начальное состояние (которое по факту игнорируется), мы можем передать функцию в useState.
+React вызовет эту функцию один раз во время первого рендера. 
+
+```typescript jsx
+function Table(props) {
+  // createRows() будет вызван только один раз
+  const [rows, setRows] = useState(() => createRows(props.count));
+  // ...
+}
+```
+
+Если состояние хука обновляется тем же значением, что и текущее состояние, 
+React досрочно выйдет из хука без повторного рендера дочерних элементов и запуска эффектов.
+
+## useEffect
+
+useEffect выполняет ту же роль, что и componentDidMount, componentDidUpdate и componentWillUnmount 
+в React-классах, объединив их в единый API. 
+
+Хук эффекта даёт возможность выполнять побочные эффекты в функциональном компоненте.
+Побочными эффектами в React-компонентах могут быть: 
+загрузка данных, оформление подписки и изменение DOM вручную.
+То есть те действия, которые не должны приводить к обновлению состояния.
+useEffect будет выполняться после каждого рендера и обновления.
+
+```js
+function Example() {
+  const [count, setCount] = useState(0);
+
+  // обновляет заголовок каждый раз, как изменилось состояние счетчика
+  useEffect(() => {
+    document.title = `Вы нажали ${count} раз`;
+  });
+}
+```
+
+В некоторых случаях сброс или выполнение эффекта при каждом рендере может вызвать проблему с производительностью. 
+В классовых компонентах это можно решить используя дополнительное сравнение 
+prevProps или prevState внутри componentDidUpdate.
+
+useEffect принимает второй необязательный аргумент - значение состояния, при изменения которого будет отрабатывать эффект.
+React пропустит вызов эффекта, если эти значения остались без изменений между последующими рендерами
+
+```js
+function Example() {
+  const [count, setCount] = useState(0);
+  const [color, setColor] = useState('#fff');
+
+  useEffect(() => {
+    document.title = `Вы нажали ${count} раз`;
+  }, [count]) // Перезапускать эффект только если count поменялся
+}
+```
+
+
+Хук эффекта также можно использовать более одного раза. 
+Это даёт возможность разделять разную несвязанную между собой логику между разными эффектами.
+```js
+function exampleWithSubscribe() {
+  useEffect(() => {
+    document.title = `Вы нажали ${count} раз`;
+  });
+  useEffect(() => {
+    document.addEventListener('click', handler);
+        
+    return () => {
+      document.removeEventListener('click', handler);
+    };
+  });
+}
+```
+
+Каждый эффект может возвратить функцию, которая сбросит его перед тем, как компонент размонтируется. 
+Это даёт возможность объединить вместе логику оформления и отмены подписки.
+```js
+function FriendStatus(props) {
+  useEffect(() => {
+    ChatAPI.subscribeToFriendStatus(props.friend.id);
+
+    return () => {
+      ChatAPI.unsubscribeFromFriendStatus(props.friend.id);
+    };
+  });
+}
+```
+
+Сброс эффекта необходим по той причине, 
+что при обновлении пропсов произойдет повторная подписка с новыми данными.
+Отсутствие сброса также может привести к утечке памяти 
+или вообще к вылету приложения при размонтировании.
+
+После рендера с новыми пропсами, перед повторным вызовом эффекта, 
+произойдет сброс предыдущего эффекта с предыдущими пропсами, 
+что избавляет от необходимости использовать componentDidUpdate(prevProps).
+
+```js
+// Монтируем с пропсами { friend: { id: 100 } } 
+ChatAPI.subscribeToFriendStatus(100);     // Выполняем первый эффект
+
+// Обновляем с пропсами { friend: { id: 200 } }
+ChatAPI.unsubscribeFromFriendStatus(100); // Сбрасываем предыдущий эффект
+ChatAPI.subscribeToFriendStatus(200);     // Выполняем следующий эффект
+```
+
+## useContext
+
+Контекст предоставляет способ делиться такими данными между компонентами 
+без необходимости явно передавать пропсы через каждый уровень дерева.
+
+
+```typescript jsx
+const ThemeContext = React.createContext('#fff');
+
+// Контекст позволяет передавать значение глубоко
+// в дерево компонентов без явной передачи пропсов
+// на каждом уровне. Создадим контекст для текущей
+// UI-темы (со значением "#fff" по умолчанию).
+function App() {
+  return (
+    <ThemeContext.Provider value={'#000'}>
+      <Toolbar />
+    </ThemeContext.Provider>
+  );
+}
+
+// Компонент, который находится в середине,
+// больше не должен явно передавать тему вниз.
+function Toolbar(props) {
+  return (
+    <div>
+      <ThemedButton />
+    </div>
+  );
+}
+
+// Определяем contextType, чтобы получить значение контекста.
+// React найдёт (выше по дереву) ближайший Provider-компонент,
+// предоставляющий этот контекст, и использует его значение.
+// В этом примере значение UI-темы будет "#000".
+function ThemedButton() {
+  const theme = useContext(ThemeContext);
+  return (
+    <button style={{ background: theme }}>
+      Я стилизован темой из контекста!
+    </button>
+  );
+}
+```
+
+## useReducer
+
+Хук useReducer - альтернатива useState и обычно предпочтительнее последнего, 
+когда у вас сложная логика состояния, которая включает в себя несколько значений, 
+или когда следующее состояние зависит от предыдущего. 
+useReducer также позволяет оптимизировать производительность компонентов, 
+которые запускают глубокие обновления, поскольку вы можете передавать dispatch вместо колбэков.
+
+```js
+const [state, dispatch] = useReducer(reducer, initialArg, init);
+```
+
+useReducer принимает:
+-   функцию редюсер вида (state, action) => newState
+-   начальное значение состояния
+-   необязательный аргумент, функция устанавливающая начальное состояние 
+равным результату вызова init(someArg).
+
+useReducer возвращает:
+-   переменную состояния
+-   метод dispatch, 
+который вызывает редюсер и передает в него вторым аргументом объект действия {type, payload} по аналогии с Redux.
+
+```typescript jsx
+function init(initialCount) {
+  return {count: initialCount};
+}
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'increment':
+      return {count: state.count + 1};
+    case 'decrement':
+      return {count: state.count - 1};
+    case 'reset':
+      return init(action.payload);
+    default:
+      throw new Error();
+  }
+}
+
+function Counter({initialCount}) {
+  const [state, dispatch] = useReducer(reducer, initialCount, init);
+  return (
+    <>
+      Count: {state.count}
+      <button
+        onClick={() => dispatch({type: 'reset', payload: initialCount})}>
+        Reset
+      </button>
+      <button onClick={() => dispatch({type: 'decrement'})}>-</button>
+      <button onClick={() => dispatch({type: 'increment'})}>+</button>
+    </>
+  );
+}
+```
+
+## useMemo
+
+```js
+const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+```
+
+useMemo будет повторно вычислять мемоизированное значение только тогда, 
+когда значение какой-либо из зависимостей изменилось. 
+Эта оптимизация помогает избежать дорогостоящих вычислений при каждом рендере.
+
+
+React может решить «забыть» некоторые ранее мемоизированные значения 
+и пересчитать их при следующем рендере, например, 
+чтобы освободить память для компонентов вне области видимости экрана. 
+
+useMemo позволяет пропускать затратные повторные рендеры дочерних компонентов.
+
+```typescript jsx
+function ColorPicker() {
+  // Не нарушает неглубокую проверку на равенство свойств компонента Child,
+  // система реагирует лишь на реальное изменение цвета.
+
+  const [color, setColor] = useState('pink');
+  const MemoizedChild = useMemo(()=> <Child style={color} />,[color]);
+  
+  return ( <MemoizedChild/> );
+}
+```
+
+Однако обновление состояния родительского компанента, приводит к ререндеру дочернего компонента, 
+даже при условии, что тот использует только неизменившееся мемоизированное свойство.
+
+```typescript jsx
+function ColorPicker(props) {
+  const [size,setSize] = useState('49.5');
+  const [color, setColor] = useState('pink');
+  const memoizedProp = useMemo(()=>(color),[color]);
+  
+  //Вызов любого из setState, либо обновление пропсов приведет к вызову метода render
+  return ( <Child style={color} /> );
+}
+```
+
+[Демо](https://yahevin.github.io/react_project_foundation/dist/memo)
+
+### React.memo                 
+Хук useMemo это альтернатива методу: React.memo - HOC (компонент высшего порядка), 
+который оборачивает классовый, либо функциональный компоненты.
+
+```typescript jsx
+const Memoized = React.memo(() => <div>Hello world</div>)
+```
+
+По умолчанию он поверхностно сравнивает вложенные объекты в объекте props. 
+Чтобы контролировать сравнение, следует передать функцию сравнения в качестве второго аргумента.
+```typescript jsx
+const MemoizedName = React.memo(
+  (props) => <div>{props.name}</div>
+,
+  // return true if passing nextProps to render would return the same result as passing prevProps to render, otherwise return false
+  (prevProps, nextProps) => prevProps.name === nextProps.name
+)
+```
+
+## useCallback
+
+Принимает встроенный колбэк и массив зависимостей. 
+Хук useCallback вернёт мемоизированную версию колбэка, который изменяется только, 
+если изменяются значения одной из зависимостей. 
+Это полезно при передаче колбэков оптимизированным дочерним компонентам, 
+которые полагаются на равенство ссылок для предотвращения ненужных рендеров (например, shouldComponentUpdate).
+
+useCallback(fn, deps) — это эквивалент useMemo(() => fn, deps)
+
+Функция, объявленная внутри компонента, изменяется в каждой операции рендеринга.
+Она будет создаваться заново, даже если используемые параметры остаются неизменными.
+В таком случае эффекты, будут срабатывать при каждом обновлении, 
+даже будучи привязанными к этой функции.
+
+```js
+function SearchResults(props) {
+    
+  const getFetchUrl = () => {
+    return 'https://test/search?query=' + props.query;
+  }; 
+  // функция обновляется при каждом ререндере компонента 
+ 
+  useEffect(() => {
+    const url = getFetchUrl();
+    // ... Загрузим данные и что-то с ними сделаем 1...
+
+  }, [getFetchUrl]); // С зависимостями эффекта всё в порядке.
+
+
+  useEffect(() => {
+    const url = getFetchUrl();
+    // ... Загрузим данные и что-то с ними сделаем 2...
+
+  }, [getFetchUrl]); // С зависимостями эффекта всё в порядке
+}
+```
+
+```js
+function SearchResults(props) {
+
+  // Если зависимости не меняются, сущность сохраняется  
+  const getFetchUrl = useCallback(() => {
+    return 'https://test/search?query=' + props.query;
+  }, [props.query]) // С зависимостями коллбэка всё в порядке.
+
+  // ...
+}
+```
+
+## useRef
+
+```js
+const refContainer = useRef(initialValue);
+```
+
+useRef возвращает изменяемый ref-объект, свойство .current которого инициализируется переданным аргументом (initialValue). 
+Возвращённый объект будет сохраняться в течение всего времени жизни компонента.
+
+useRef используется в случаях, когда необходимо императивно изменить дочерний элемент, обойдя обычный поток данных. 
+Подлежащий изменениям дочерний элемент может быть как React-компонентом, так и DOM-элементом.
+
+```typescript jsx
+function TextInputWithFocusButton() {
+  const inputEl = useRef(null);
+  const onButtonClick = () => {
+    // `current` указывает на смонтированный элемент `input`
+    inputEl.current.focus();
+  };
+  return (
+    <>
+      <input ref={inputEl} type="text" />
+      <button onClick={onButtonClick}>Установить фокус на поле ввода</button>
+    </>
+  );
+}
+``` 
+Хук useRef пришел на замену CreateRef.
+```js
+const refContainer = React.CreateRef();
+```
+Рвзница между этими методами заключается в том, что CreateRef() возвращает новый реф при каждом рендере, 
+а то хук useRef даст один и тот же объект с рефом при каждом рендере. 
+Возвращаемый объект сохраняется на протяжении всего жизненного цикла компонента.
+Это и отличает useRef() от простого создания объекта {current: ...}, 
+так что хук useRef ещё применим для сохранения любого мутируемого значения. 
+useRef возвращает мутабельный объект, свойству .current которого присваивается 
+значение аргумента initialValue.Мутирование свойства .current не вызывает повторный рендер. 
+
+```typescript jsx
+function Test() {
+   const [renderIndex, setRenderIndex] = React.useState(1);
+   const refFromUseRef = React.useRef();
+   const refFromCreateRef = createRef();
+
+   if (!refFromUseRef.current) {
+      // сработает 1 раз
+      refFromUseRef.current = renderIndex
+   }
+
+   if (!refFromCreateRef.current) {
+      // будет обновляться при каждом рендере
+      refFromCreateRef.current = renderIndex
+   }
+
+   return (
+      <>
+         <p>value:{refFromUseRef.current}</p>
+         <p>value:{refFromCreateRef.current}</p>
+
+         <button onClick={() => setRenderIndex(prev => prev + 1)}>
+            Cause re-render
+         </button>
+      </>
+   )
+}
+```
+
+[Демо](https://yahevin.github.io/react_project_foundation/dist/ref)
+
+### Callback-Ref
+Вместо того, чтобы передавать атрибут ref созданный с помощью createRef(), можно передать функцию. 
+Данная функция получит экземпляр React-компонента или HTML DOM-элемент в качестве аргумента, 
+которые потом могут быть сохранены или доступны в любом другом месте.
+
+```typescript jsx
+function MeasureExample() {
+  const [height, setHeight] = useState(0);
+
+  const measuredRef = (node) => {
+    // из-за обновления функции коллбэк вызывается дважды
+    // и первый вызов с node === null, ref еще не создан
+    if (node !== null) {
+      setHeight(node.offsetHeight);
+    }
+  };
+
+  return (
+    <>
+      <h1 ref={measuredRef}>Привет, мир</h1>
+      <h2>Заголовок выше имеет высоту {Math.round(height)} пикселей</h2>
+    </>
+  );
+}
+```
+
+При желании вы можете извлечь эту логику в хук для повторного использования:
+```typescript jsx
+function MeasureExample() {
+  const [rect, ref] = useClientRect();
+  return (
+    <>
+      <h1 ref={ref}>Привет, мир</h1>
+      {rect !== null &&
+      <h2>Заголовок выше имеет высоту {Math.round(rect.height)} пикселей</h2>
+      }
+    </>
+  );
+}
+
+function useClientRect() {
+  const [rect, setRect] = useState(null);
+  const ref = (node) => {
+    if (node !== null) {
+      setRect(node.offsetHeight);
+    }
+  };
+  return [rect, ref];
+}
+```
+
+[Демо](https://yahevin.github.io/react_project_foundation/dist/callback_ref)
+
+## useLayoutEffect
+
+useEffect работает синхронно и выполняется после обновления контента на странице:
+-   запускается функция рендер
+-   страница обновлена
+-   потом запускается useEffect
+
+useLayoutEffect работает асинхронно, после рендера, но до обновления страницы:
+-    запускается функция рендер
+-    потом запускается useLayoutEffect, и React ожидает конца выполнения эффекта
+-    страница обновлена
+
+useLayoutEffect пможет быть использован, если обновление представляет собой двухэтапный (или многоэтапный) процесс 
+- например, он сначала отображается в частично готовом состоянии, 
+а затем сразу же повторно отображается в своем конечном состоянии.
+
+useLayoutEffect позволяет «сгруппировать» пару обновлений перед перерисовкой экрана, 
+таким образом компонент не будет мерцать - визуально будет заметно только одно обновление.
+
+```typescript jsx
+const BlinkyRender = () => {
+  const [value, setValue] = useState(0);
+
+  useLayoutEffect(() => {
+    if (value === 0) {
+      setValue(100000);
+    }
+  }, [value]);
+
+  return (
+    <div onClick={() => setValue(0)}>
+      value: {value}
+    </div>
+  );
+};
+```
+
+[Демо](https://yahevin.github.io/react_project_foundation/dist/layout_effect)
+
+
+
+
+
+
+
+
+
