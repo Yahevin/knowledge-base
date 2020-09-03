@@ -23,9 +23,16 @@
         * [React.memo](#React.memo)
     * [useCallback](#useCallback)
     * [useRef](#useRef)
-        *[Callback-Ref](#Callback-Ref)
+        * [Callback-Ref](#Callback-Ref)
     * [useLayoutEffect](#useLayoutEffect)
-   
+1. [React Spring](#react-spring)
+    *[useSpring](##useSpring)
+    *[useSprings](##useSprings)
+    *[useTrail](##useTrail)
+    *[useTransition](##useTransition)
+    *[useChain](##useChain) 
+    *[Height: auto](##Height:-auto)
+    *[Interpolate](##Interpolate)
     
 # Promise
 
@@ -929,6 +936,304 @@ const BlinkyRender = () => {
 
 [Демо](https://yahevin.github.io/react_project_foundation/dist/layout_effect)
 
+# React spring
+[Библиотека](https://www.react-spring.io/) для создания анимаций, имитирующих физику пружины.
+
+Поведение задается через render-props api либо хуки.
+Как и везде в этом пособии, мы будем топить за хуки, делая фолл-бэк к "устаревшим" технологиям.
+
+## useSpring
+```typescript jsx
+import {useSpring, animated} from 'react-spring';
+
+function fade({toggle}) {
+    const props = useSpring({
+        opacity: toggle ? 1 : 0,
+        config: { mass: 5, tension: 350, friction: 40 } 
+    });
+    
+    return (
+        <animated.div style={props}>
+            hello world
+        </animated.div>
+    )
+}
+```
+
+Существует сокращенная запись "to", однако все еще нужен "from", 
+либо значение в "to" должно меняться в зависимости от состояния.
+```typescript jsx
+// This ...
+const props = useSpring({opacity: 1, color: 'red'});
+// is a shortcut for this ...
+const props = useSpring({to: {opacity: 1, color: 'red'}};
+```
+
+Хук возвращает функцию сеттер.
+```typescript jsx
+function App() {
+  const [props, set, stop] = useSpring(() => ({opacity: 1}));
+
+  return (
+     <>
+        <animated.div style={props}
+            onMouseOver={()=>{set({opacity: 0})}}
+            onMouseLeave={()=>{set({opacity: 1})}}
+        >
+          Try to catch
+        </animated.div>
+
+        <button onClick={stop}>Stop animation</button>
+     </>
+  )
+}
+
+set(prev => !prev)
+// не сработает, потому что prev - всегда будет возращать в данном случае 1, т.к. это указано в initial
+```
+
+
+Необязательно использовать <animated.tag> 
+```typescript jsx
+const Wrap = styled.div`
+    overflow: hidden;
+    background: #000;
+    border-radius: 10px;   
+`;
+const Animated = animated(Wrap);
+
+function animation() {
+    const props = useSpring({opacity: toggle ? 1 : 0});
+    
+    return (
+        <Animated style={props}>
+            hello world
+        </Animated>
+    )
+}
+```
+
+## useSprings
+Создает множество анимированных объектов с уникальными конфигурациями.
+Хук задается аналогично useSpring, отличие - в аргументы передается количество объектов.  
+
+```typescript jsx
+const springs = useSprings(number, items.map((item, index)) => ({ opacity: item.opacity }));
+
+const [springs, set, stop] = useSprings(number, index => ({opacity: 1}));
+```
+
+```typescript jsx
+const pages: string[] = [...];
+
+function Viewpager() {
+  const height = 80;
+  
+  // this is equal  
+  const [props, set] = useSprings(pages.length, i => ({ tr: i * height, from: {tr: 0} }));
+  // to this  
+  const [props, set] = useSprings(pages.length, i => ({ tr: 0 }));
+  set(i => {
+    return {tr: i * height};
+  });
+  //
+
+
+  return (
+    <div>
+      {props.map((item, i) => (
+        <animated.div 
+          key={i} 
+          style={{ 
+            position: 'absolute',
+            height: height + 'px', 
+            transform: item.tr.interpolate(x => `translate3d(0,${x}px,0)`), 
+            backgroundImage: `url(${pages[i]})` 
+          }} 
+        />
+      ))}
+    </div> 
+  ) 
+}
+
+```
+
+## useTrail
+Создает множество анимированных объектов с одинаковой конфигурацией. 
+Каждая последующая анимация следует за предыдущей.
+
+Хук задается аналогично useSprings.
+
+```typescript jsx
+const trail = useTrail(data.length, {opacity: 1, from: {opacity: 0}});
+
+return (
+    <>
+      { trail.map((props,index) => (
+        <animated.div style={props}>{data[index]}</animated.div>
+      ))}
+    </>
+)
+```
+
+## useTransition
+Позволяет анимировать монтирование, размонтирование элементов.
+В отличие от useSpring, скрытые элементы полностью удаляются из DOM.
+
+useTransition(item, key, config)                                
+item - массив выводимых элементов, либо любое другое значение - 
+в таком случае transitions.map просто вернет вложенный компонент, 
+а переданное значение item можно будет использовать для управления отображаемым контентом.
+
+```typescript jsx
+function Toggle({toggle}) {
+    const transitions = useTransition(toggle, null, {
+        from: { position: 'absolute', opacity: 0 },
+        enter: { opacity: 1 },
+        leave: { opacity: 0 },
+    });
+
+    return (
+        <>
+            transitions.map(({ item, key, props }) => 
+                item
+                  ? <animated.div style={props}>😄</animated.div>
+                  : <animated.div style={props}>🤪</animated.div>
+                )
+        </>
+    )
+}
+```
+
+Свойство trail конфигурации хука определяет задержку в ms анимирования каждого следующего элемента списка.
+```typescript jsx
+const data = [{name:'first',css:'green'}, ...]; //items array;
+
+function TransitionWithTrail({isOpen}) {
+    const transitions = useTransition(isOpen ? data : [], item => item.name, {
+        unique: true,
+        trail: 400 / data.length,
+        from: { opacity: 0, transform: 'scale(0)' },
+        enter: { opacity: 1, transform: 'scale(1)' },
+        leave: { opacity: 0, transform: 'scale(0)' }
+    });
+
+    return (
+            <>
+                {transitions.map(({ item, key, props }) => (
+                    <animated.div key={key} style={{ ...props, background: item.css }} />
+                ))}
+            </>
+    )
+}
+```
+
+useTransition можно использовать для анимирования переключения страниц роутера.
+```typescript jsx
+function Content() {
+    const location = useLocation();
+
+    const transitions = useTransition(location, location => location.pathname, {
+        from: { opacity: 0, transform: `translate3d(100%,0,0)`},
+        enter: { opacity: 1, transform: 'translate3d(0%,0,0)' },
+        leave: { opacity: 0,transform: `translate3d(-50%,0,0)`, position: 'absolute'},
+    });
+
+    return (
+        <main>
+            {transitions.map(({item,props,key})=>(
+                <animated.div key={key} style={props}>
+                    <Switch location={item}>
+                        <Route path={'/first'}>
+                            <First />
+                        </Route>
+                        <Route path={'/second'}>
+                            <Second/>
+                        </Route>
+                        <Route path={'/third'}>
+                            <Third/>
+                        </Route>
+                    </Switch>
+                </animated.div>
+            ))}
+        </main>
+    )
+}
+```
+
+## useChain
+Устанавливает порядок выполнения ранее определенных обработчиков анимации, 
+при котором одна анимация запускается последовательно за другой. 
+Для определения порядка следует указать рефы анимируемых объектов.
+Порядок можно изменить в последующих проходах рендеринга.
+
+```typescript jsx
+// Build a spring and catch its ref
+const springRef = useRef()
+const props = useSpring({...values, ref: springRef})
+// Build a transition and catch its ref
+const transitionRef = useRef()
+const transitions = useTransition({...values, ref: transitionRef})
+// First run the spring, when it concludes run the transition
+
+// The spring will start right away: 0.0 * 1000ms = 0ms
+// The transition will start after: 0.5 * 1000ms (the timeFrame default) = 500ms
+useChain([springRef, transitionRef], [0, 0.5] /*1000*/)
+// Use the animated props like always
+return (
+  <animated.div style={props}>
+    {transitions.map(({item, key, props}) => (
+      <animated.div key={key} style={props} />
+    ))}
+  </animated.div>
+)
+```
+
+## Height: auto
+Хуки не умеют в height: "auto", придется использовать <Spring>.
+```typescript jsx
+import { Spring, animated } from 'react-spring/renderprops';
+
+function Toggle({isOpen}) {
+    return (
+        <Spring
+            from={{ height: isOpen ? 0 : 'auto' }}
+            to={{ height: isOpen ? 'auto' : 0 }}>
+            {style => (
+                <animated.div style={style}>
+                    Some content
+                </animated.div>
+            )}
+        </Spring>
+    )
+}
+```
+
+## Interpolate
+Позволяет использовать интреполируемое значение(число), либо целую строку css кода(её можно, например, дополнить).
+
+```typescript jsx
+const Translate = () => {
+  const spring = useSpring({
+    from: {
+      X: 0,
+    },
+    to: {
+      X: 120,
+    },
+  });
+
+  return (
+    <animated.div
+      style={{
+        transform: spring.X.interpolate(value => `translate(${value}px)`),
+      }}
+    >
+      Translated
+    </animated.div>
+  );
+};
+```
 
 
 
