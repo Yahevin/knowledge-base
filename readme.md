@@ -26,13 +26,15 @@
         * [Callback-Ref](#Callback-Ref)
     * [useLayoutEffect](#useLayoutEffect)
 1. [React Spring](#react-spring)
-    *[useSpring](##useSpring)
-    *[useSprings](##useSprings)
-    *[useTrail](##useTrail)
-    *[useTransition](##useTransition)
-    *[useChain](##useChain) 
-    *[Height: auto](##Height:-auto)
-    *[Interpolate](##Interpolate)
+    * [useSpring](##useSpring)
+    * [useSprings](##useSprings)
+    * [useTrail](##useTrail)
+    * [useTransition](##useTransition)
+    * [useChain](##useChain) 
+    * [Height:auto](##Height:auto)
+    * [Interpolate](##Interpolate)
+1. [Database](#Database)
+    *[MySQL](#MySQL)
     
 # Promise
 
@@ -330,6 +332,8 @@ setTimeout выводит контекст исполнения функции �
 Передавая функцию обратного вызова — callback, добавляем её в список функций, 
 которые должны быть вызваны при срабатывании этого события.
 
+**[⬆ back to top](#table-of-contents)**
+
 # Browser events
 
 Событие – это сигнал от браузера о том, что что-то произошло. 
@@ -416,6 +420,8 @@ elem.addEventListener( "click" , function(event){
 *   Если аргумент false, то событие будет поймано при всплытии.
 
 [Демо](https://yahevin.github.io/react_project_foundation/dist/events)
+
+**[⬆ back to top](#table-of-contents)**
 
 # React hooks
 
@@ -936,6 +942,8 @@ const BlinkyRender = () => {
 
 [Демо](https://yahevin.github.io/react_project_foundation/dist/layout_effect)
 
+**[⬆ back to top](#table-of-contents)**
+
 # React spring
 [Библиотека](https://www.react-spring.io/) для создания анимаций, имитирующих физику пружины.
 
@@ -1189,7 +1197,7 @@ return (
 )
 ```
 
-## Height: auto
+## Height:auto
 Хуки не умеют в height: "auto", придется использовать <Spring>.
 ```typescript jsx
 import { Spring, animated } from 'react-spring/renderprops';
@@ -1234,10 +1242,46 @@ const Translate = () => {
   );
 };
 ```
+**[⬆ back to top](#table-of-contents)**
 
+# Database
 
+## MySQL
+Cписок бд:
+```sql
+SHOW DATABASES;
+```
+Создание бд:
+```sql
+CREATE DATABASE db_name ;
+```
 
+Переключение бд:
+```sql
+USE db_name ;
+```
 
+Создание юзера: 
+```sql
+CREATE USER 'username'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'password';
+GRANT ALL PRIVILEGES ON  db_name.* TO 'username'@'localhost' IDENTIFIED BY 'password';
+```
+
+В случае "Your password does not satisfy the current policy requirements":
+```sql
+SHOW GLOBAL VARIABLES LIKE 'validate_password%';
+
+SET GLOBAL validate_password_special_char_count = 0;
+SET GLOBAL validate_password.length = 0;
+SET GLOBAL validate_password.mixed_case_count = 0;
+SET GLOBAL validate_password.number_count = 0;
+SET GLOBAL validate_password.policy = LOW;
+```
+
+Import dump:
+```sql
+mysql -u username -p db_name < file.sql;
+```
 
 
 
