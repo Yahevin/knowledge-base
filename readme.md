@@ -33,8 +33,15 @@
     * [useChain](##useChain) 
     * [Height:auto](##Height:auto)
     * [Interpolate](##Interpolate)
+1. [React Redux with TS](#React-Redux-with-TS)
+    * [Connect](##Connect)
+    * [Redux hooks](##Redux-hooks)
+        * [useSelector](###useSelector)
+        * [useDispatch](###useDispatch)
+    * [File System](##File-system)
+    * [Code example](##Code-example)
 1. [Database](#Database)
-    *[MySQL](#MySQL)
+    * [MySQL](#MySQL)
     
 # Promise
 
@@ -1242,7 +1249,254 @@ const Translate = () => {
   );
 };
 ```
+
 **[⬆ back to top](#table-of-contents)**
+
+# React Redux with TS
+чтобы сделать хранилище доступным по всему дереву компонентов,
+следует обернуть все приложение в компонент \<Provider>, передав тому объект [хранилища](###store/index):
+```js
+import {Provider} from "react-redux";
+import store from "@/store";
+
+ReactDOM.render(
+  <Provider store={store}>
+    <App />
+  </Provider>,
+  document.getElementById('root');
+)
+```
+
+## Connect
+Функция connect () подключает компонент React к хранилищу Redux. 
+Он предоставляет свой связанный компонент с частями необходимых ему данных из store и функциями, 
+которые он может использовать для отправки действий в store.
+
+```typescript
+function connect(mapStateToProps?, mapDispatchToProps?, mergeProps?, options?);
+```
+MapStateToProps и mapDispatchToProps работают с state и dispatch хранилища Redux.
+
+```typescript jsx
+function App(props) {
+  return (
+    <h1 onClick={props.onClick}>{props.todoList}</h1>
+  )
+}
+
+function mapStateToProps(state) {
+  return state.todoList;
+}
+function mapDispatchToProps(dispatch) {
+  return {
+    onClick: event => dispatch({type: 'CLICK', payload: event.target}),
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(App);
+```
+
+## Redux hooks
+Хуки облегчают написание кода - они освобождают от необходимости использования connect().
+
+### useSelector
+Селектор будет вызываться со всем состоянием хранилища Redux в качестве единственного аргумента. 
+Селектор будет запускаться всякий раз, когда функциональный компонент выполняет рендеринг. 
+useSelector () также будет подписываться на хранилище Redux и обновляться при каждом вызове dispatch().
+
+```typescript
+const page = useSelector((store:TStore) => store.pageReducer.page);
+```
+[TStore](###store/reducer) - тип глобального хранилища. 
+Его использование позволяет ide давать подсказки о содержимом стора.
+В этом примере store формируется из стейтов нескольких редукторов.
+
+### useDispatch
+Возвращает функцию обновления глобального хранилища. 
+
+```typescript jsx
+function StartPage() {
+    const dispatch = useDispatch();
+
+    const startHandler = useCallback(() => {
+        dispatch({
+             type: 'SET_PAGE',
+             payload: page,
+        });
+    }, []);
+
+    return (
+        <button callback={startHandler}>
+            Start
+        </button>
+    )
+}
+
+export default StartPage;
+```
+Для типизации передаваемых в редуктор объектов действия(action) можно создать автоматически заполняемый тип.
+Пример реализации: [action](###store/page/action), [reducer](###store/page/reducer).
+
+Тип PageActionTypes позволяет типизировать объект действия - 
+таким образом тип action.payload будет определен для каждого соответсвующего action.type.
+Тип action.type типизирован как строковый литерал - 
+а заначит на каждый case в конструкции switch будет соответсвующий тип экшена.
+
+## File system
+constants                                       
+&emsp;&emsp;\\__ [PAGES.ts](###constants/PAGES)                                 
+store    
+&emsp;&emsp;\\__ [actions.ts](###store/actions)                                                                                          
+&emsp;&emsp;\\__ [index.ts](###store/index)                                                                           
+&emsp;&emsp;\\__ [reducer.ts](###store/reducer)                                                                         
+&emsp;&emsp;\\__ page          
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\\__ [action.ts](###store/page/action)          
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\\__ [IPageState.ts](###store/page/IPageState)              
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\\__ [reducer.ts](###store/page/reducer)         
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\\__ [state.ts](###store/page/state)               
+
+## Code example
+
+###store/actions
+[Файловая система](##File-system)
+```typescript
+export const SET_PAGE = 'SET_PAGE' as 'SET_PAGE';
+```
+
+###store/index
+[Файловая система](##File-system):
+- [reducer](###store/reducer)
+
+```typescript
+import {createStore} from 'redux';
+import {reducer} from "@/store/reducer";
+
+const store = createStore(reducer);
+
+export default store;
+```
+
+
+###store/reducer
+[Файловая система](##File-system):
+- [pageReducer](###store/page/reducer)
+
+```typescript
+import pageReducer from "@/store/page/reducer";
+...
+
+const reducers = {
+    pageReducer,
+    ...
+};
+
+type InferResultType<T> = T extends ((...args:any) => infer U) ? U : never;
+type InferReducerType<T> = {[K in keyof T]: InferResultType<T[K]>};
+
+type TStore = InferReducerType<typeof reducers>
+const reducer = combineReducers(reducers);
+
+
+export {reducer, TStore};
+```
+
+
+###constants/PAGES
+```typescript
+enum PAGES {
+    START = '/',
+    AUTH = '/auth',
+    MAIN = '/main'
+}
+
+export default PAGES;
+```
+
+
+###store/page/state
+[Файловая система](##File-system):
+- [PAGES](###constants/PAGES)
+- [IPageState](###store/page/IPageState)
+
+```typescript
+import PAGES from "@/constants/Pages";
+import IPageState from "@/store/page/IPageState";
+
+const pageState: IPageState = {
+    page: PAGES.START
+};
+
+export default pageState;
+```
+
+
+###store/page/action
+[Файловая система](##File-system):
+- [SET_PAGE](###store/actions)
+- [PAGES](###constants/PAGES)
+
+```typescript
+import {SET_PAGE} from "@/store/actions";
+import PAGES from "@/constants/Pages";
+
+const PageAction = {
+    set: function(page: PAGES) {
+        return {
+            type: SET_PAGE,
+            payload: page,
+        }
+    },
+};
+
+type InferValueTypes<T> = T extends {[key: string]: infer U} ? U : never;
+type PageActionTypes = ReturnType<InferValueTypes<typeof PageAction>>;
+
+export {PageAction, PageActionTypes};
+```
+
+###store/page/IPageState
+[Файловая система](##File-system):
+- [PAGES](###constants/PAGES)
+
+```typescript
+import PAGES from "@/constants/Pages";
+
+interface IPageState {
+    page: PAGES
+}
+
+export default  IPageState;
+```
+
+
+### store/page/reducer
+[Файловая система](##File-system):
+- [pageState](###store/page/state)
+- [PageActionTypes](###store/page/actions)
+- [IPageState](###store/page/IPageState)
+
+```typescript
+import {SET_PAGE} from "@/store/actions";
+import pageState from "@/store/page/state";
+import {PageActionTypes} from "@/store/page/action";
+import IPageState from "@/store/page/IPageState";
+
+
+function pageReducer(state = pageState, action: PageActionTypes) : IPageState {
+    switch (action.type) {
+        case SET_PAGE: {
+            return {
+                ...state,
+                page: action.payload
+            }
+        }
+        default: {
+            return state;
+        }
+    }
+};
+
+export default pageReducer;
+```
 
 # Database
 
