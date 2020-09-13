@@ -1501,24 +1501,35 @@ export default pageReducer;
 # Database
 
 ## MySQL
+
+Обновление пароля рута:
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'password';
+-- Or 
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
+```
+
 Cписок бд:
 ```sql
 SHOW DATABASES;
 ```
 Создание бд:
 ```sql
-CREATE DATABASE db_name ;
+CREATE DATABASE db_name;
 ```
 
 Переключение бд:
 ```sql
-USE db_name ;
+USE db_name;
 ```
 
 Создание юзера: 
 ```sql
 CREATE USER 'username'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'password';
-GRANT ALL PRIVILEGES ON  db_name.* TO 'username'@'localhost' IDENTIFIED BY 'password';
+-- Or 
+CREATE USER 'username'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
+
+GRANT ALL PRIVILEGES ON  db_name.* TO 'username'@'localhost';
 ```
 
 В случае "Your password does not satisfy the current policy requirements":
