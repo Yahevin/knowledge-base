@@ -10,7 +10,8 @@
 1. [Promise](#Promise)
     * [Promise.then()](#Promise.then())
     * [Promise.all()](#Promise.all())
-1. [Garbage Сollector](#garbage-collector)
+1. [Garbage Collector](#garbage-collector)
+    * [Memory Leak](#memory-leak)
 1. [Async/Await](#Async/Await)
 1. [Event loop](#event-loop)
     * [Microtasks](#Microtasks)
@@ -56,7 +57,6 @@
     
     
 # Scope
-
 ## Hoisting
 «поднятие переменной» - при создании переменной в JavaScript, она инициализируются со значением undefined. 
 Интерпретатор JavaScript присваивает переменой значение undefined по умолчанию, во время так называемой фазы «Создания».
@@ -167,7 +167,8 @@ obj.test();//вернёт undefined
 **[⬆ back to top](#table-of-contents)**    
     
     
-# Garbage Сollector
+
+# Garbage Collector
 Основной концепцией управления памятью в JavaScript является принцип достижимости – значения, 
 которые доступны или используются гарантированно находятся в памяти.
 
@@ -209,6 +210,47 @@ console.log(admin.name) // myName
 но зато теперь у нас есть много крошечных задержек вместо одной большой.
 * Сборка в свободное время (Idle-time collection) – чтобы уменьшить возможное влияние на производительность, 
 сборщик мусора старается работать только во время простоя процессора
+
+## Memory Leak
+Главной причиной утечек памяти в языках со сборщиками мусора являются нежелательные ссылки.
+Это ссылки, достижимые из корня, но ссылающиеся на фрагменты памяти, которые точно никогда больше не понадобятся. 
+В JavaScript нежелательными ссылками станут потерявшие актуальность переменные, забытые в коде, удерживающие в памяти ненужные более объекты.
+Глобальные переменные не обрабатываются сборщиком мусора, если только не приравнять их к null или переназначить
+
+### Accidental global variables
+```js
+function foo(arg) {
+    bar = "скрытая глобальная переменная";
+}
+// создаст новую переменную в глобальном объекте
+```
+
+### Forgotten listeners
+```js
+var element = document.getElementById('button');
+
+function onClick(event) {
+    element.innerHtml = 'text';
+}
+
+element.addEventListener('click', onClick);
+element.parentNode.removeChild(element);
+// Обработчик клика остался
+```
+
+### Links on deleted DOM elements
+```js
+const button = document.getElementById('button');
+
+function removeButton() {
+    // Кнопка находится непосредственно в body.
+    document.body.removeChild(document.getElementById('button'));
+
+    // В этом случае мы всё равно ссылаемся на #button 
+    // Т.е. кнопка до сих пор находится в памяти 
+    // и не может быть удалена сборщиком мусора.
+}
+```
 
 **[⬆ back to top](#table-of-contents)**
 
