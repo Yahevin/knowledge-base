@@ -1,4 +1,19 @@
 # Table of contents
+1. [HTML](#HTML)
+    * [HTML Validation](#HTML-validation)
+    * [Semantic HTML](#semantic-html)
+    * [SEO](#seo)
+    * [Web Accessibility](#web-accessibility)
+1. [CSS](#css)
+    * [CSS Specificity](#css-specificity)
+    * [Box Model](#box-model)
+    * [Block Formatting Context](#block-formatting-context)
+    * [Stacking Context](#stacking-context)
+1. [Browser](#Browser)
+    * [Render](#render)
+    * [Pixel Lifecycle](#pixel-lifecycle)
+    * [Web Worker](#web-worker)
+    * [requestAnimationFrame](#requestanimationframe)
 1. [Scope](#Scope)
     * [Hoisting](#Hoisting)
     * [Execution Context](#execution-context)
@@ -61,7 +76,6 @@
     
     
 # HTML
-
 ## HTML Validation     
 HTML-валидатор производит несколько проверок Вашего кода. Основные из них:
 * Валидация синтаксиса — проверка на наличие синтаксических ошибок. <foo bar="baz"> является корректным синтаксисом, 
@@ -90,8 +104,10 @@ HTML-валидатор производит несколько проверок
 ## Web Accessibility
 [Чек-лист](#https://webaim.org/standards/wcag/checklist) правил, и рекомендации по веб-доступности
 
+**[⬆ back to top](#table-of-contents)**  
     
     
+
 # CSS
 Каскадные таблицы стилей описывают правила форматирования элементов с помощью свойств и допустимых значений этих свойств.
 Объявление стиля состоит из двух частей: селектора и объявления.
@@ -157,10 +173,13 @@ h1.titleClass {}
 Всё на странице является частью контекста форматирования (formatting context), который представляет собой область, 
 в которой происходит раскладка контента по определенным правилам - блочный, инлайновый, флекс, грид.
  
+
 ## Stacking Context  
 Контекст наложения это концепция трехмерного расположения HTML элементов вдоль оси Z по отношению к пользователю, 
 находящемуся перед экраном.  HTML элементы занимают это место по порядку, основанному на атрибутах элемента.
 Описывает который из пересекающихся блоков будет виден полностью, а какой будет перекрыт.
+
+**[⬆ back to top](#table-of-contents)**  
 
 # Browser
 
@@ -218,6 +237,7 @@ function step() {
 
 window.requestAnimationFrame(step);
 ```
+**[⬆ back to top](#table-of-contents)**  
 
 # Scope
 ## Hoisting
