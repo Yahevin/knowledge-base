@@ -17,12 +17,12 @@
     * [Microtasks](#Microtasks)
     * [Macrotasks](#Macrotasks)
     * [Browser`s render queue](#browser’s-render-queue)
-        * [window.requestAnimationFrame()](#window.requestAnimationFrame())
+        * [window.requestAnimationFrame()](#window.requestanimationframe())
     * [Blocking tasks](#blocking-tasks)
     * [Execution context](#execution-context)
 1. [Browser events](#browser-events)
     * [Bubbling](#bubbling)
-    * [stopPropagation](#stopPropagation)
+    * [stopPropagation](#stoppropagation)
     * [Capturing](#Capturing)
 1. [React](#React)
     * [Lifecycle](#Lifecycle)
@@ -30,32 +30,33 @@
     * [Class Component](#class-component)
     * [Concurrent Mode](#concurrent-mode)
 1. [React hooks](#react-hooks)
-    * [useState](#useState)
-    * [useEffect](#useEffect)
-    * [useContext](#useContext)
-    * [useReducer](#useReducer)
-    * [useMemo](#useMemo)
-        * [React.memo](#React.memo)
-    * [useCallback](#useCallback)
-    * [useRef](#useRef)
-        * [Callback-Ref](#Callback-Ref)
-    * [useLayoutEffect](#useLayoutEffect)
+    * [useState](#usestate)
+    * [useEffect](#useeffect)
+    * [useContext](#usecontext)
+    * [useReducer](#usereducer)
+    * [useMemo](#usememo)
+        * [React.memo](#react.memo)
+    * [useCallback](#usecallback)
+    * [useRef](#useref)
+        * [Callback-Ref](#callback-ref)
+    * [useImperativeHandle](#useimperativehandle)
+    * [useLayoutEffect](#uselayouteffect)
 1. [React Spring](#react-spring)
-    * [useSpring](##useSpring)
-    * [useSprings](##useSprings)
-    * [useTrail](##useTrail)
-    * [useTransition](##useTransition)
-    * [useChain](##useChain) 
-    * [Height:auto](##Height:auto)
-    * [Interpolate](##Interpolate)
+    * [useSpring](#usespring)
+    * [useSprings](#usesprings)
+    * [useTrail](#usetrail)
+    * [useTransition](#usetransition)
+    * [useChain](#usechain) 
+    * [Height:auto](#height:auto)
+    * [Interpolate](#interpolate)
 1. [React Redux with TS](#React-Redux-with-TS)
-    * [Connect](##Connect)
-    * [Redux hooks](##Redux-hooks)
-        * [useSelector](###useSelector)
-        * [useDispatch](###useDispatch)
-    * [File System](##File-system)
-    * [Code example](##Code-example)
-1. [Database](#Database)
+    * [Connect](#connect)
+    * [Redux hooks](#redux-hooks)
+        * [useSelector](#useselector)
+        * [useDispatch](#usedispatch)
+    * [File System](#file-system)
+    * [Code example](#code-example)
+1. [Database](#Database    )
     * [MySQL](#MySQL)
     
     
@@ -703,7 +704,6 @@ Fiber-архитектура будто находится в анабиозе �
 **[⬆ back to top](#table-of-contents)**
 
 # React hooks
-
 Хуки — нововведение в React 16.8, 
 которое позволяет использовать состояние 
 и другие возможности React с функциональными компонентами.
@@ -711,7 +711,6 @@ Fiber-архитектура будто находится в анабиозе �
 и методам жизненного цикла React из функциональных компонентов.
 
 ## useState
-
 useState принимает один аргумент - начальное значение состояния, 
 и создает переменную - ссылку на текущее состояние компонента и его сеттер.
 Таким образом обновление состояние через сеттер вызывает рендер метод компонента,
@@ -754,7 +753,6 @@ function Table(props) {
 React досрочно выйдет из хука без повторного рендера дочерних элементов и запуска эффектов.
 
 ## useEffect
-
 useEffect выполняет ту же роль, что и componentDidMount, componentDidUpdate и componentWillUnmount 
 в React-классах, объединив их в единый API. 
 
@@ -844,7 +842,6 @@ ChatAPI.subscribeToFriendStatus(200);     // Выполняем следующи
 ```
 
 ## useContext
-
 Контекст предоставляет способ делиться такими данными между компонентами 
 без необходимости явно передавать пропсы через каждый уровень дерева.
 
@@ -889,7 +886,6 @@ function ThemedButton() {
 ```
 
 ## useReducer
-
 Хук useReducer - альтернатива useState и обычно предпочтительнее последнего, 
 когда у вас сложная логика состояния, которая включает в себя несколько значений, 
 или когда следующее состояние зависит от предыдущего. 
@@ -946,22 +942,18 @@ function Counter({initialCount}) {
 ```
 
 ## useMemo
-
-```js
-const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
-```
-
 useMemo будет повторно вычислять мемоизированное значение только тогда, 
 когда значение какой-либо из зависимостей изменилось. 
 Эта оптимизация помогает избежать дорогостоящих вычислений при каждом рендере.
 
-
+```js
+const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+```
 React может решить «забыть» некоторые ранее мемоизированные значения 
 и пересчитать их при следующем рендере, например, 
 чтобы освободить память для компонентов вне области видимости экрана. 
 
 useMemo позволяет пропускать затратные повторные рендеры дочерних компонентов.
-
 ```typescript jsx
 function ColorPicker() {
   // Не нарушает неглубокую проверку на равенство свойств компонента Child,
@@ -1010,7 +1002,6 @@ const MemoizedName = React.memo(
 ```
 
 ## useCallback
-
 Принимает встроенный колбэк и массив зависимостей. 
 Хук useCallback вернёт мемоизированную версию колбэка, который изменяется только, 
 если изменяются значения одной из зависимостей. 
@@ -1060,17 +1051,14 @@ function SearchResults(props) {
 ```
 
 ## useRef
-
+useRef возвращает изменяемый ref-объект, свойство .current которого инициализируется переданным аргументом (initialValue). 
+Возвращённый объект будет сохраняться в течение всего времени жизни компонента.
 ```js
 const refContainer = useRef(initialValue);
 ```
 
-useRef возвращает изменяемый ref-объект, свойство .current которого инициализируется переданным аргументом (initialValue). 
-Возвращённый объект будет сохраняться в течение всего времени жизни компонента.
-
 useRef используется в случаях, когда необходимо императивно изменить дочерний элемент, обойдя обычный поток данных. 
 Подлежащий изменениям дочерний элемент может быть как React-компонентом, так и DOM-элементом.
-
 ```typescript jsx
 function TextInputWithFocusButton() {
   const inputEl = useRef(null);
@@ -1182,8 +1170,43 @@ function useClientRect() {
 
 [Демо](https://yahevin.github.io/react_project_foundation/dist/callback_ref)
 
-## useLayoutEffect
+## useImperativeHandle
+useImperativeHandle настраивает значение экземпляра, которое предоставляется родительским компонентам при использовании ref.
 
+```jsx harmony
+function FancyInput(props, ref) {
+  const inputRef = useRef();
+  useImperativeHandle(ref, () => ({
+    doFocus: () => {
+      inputRef.current.focus();
+      console.log('reached from parent')  
+    }
+  }));
+  return <input ref={inputRef}/>;
+}
+FancyInput = forwardRef(FancyInput);
+```
+В этом примере родительский компонент, который отображает <FancyInput ref={inputRef} />, сможет вызывать inputRef.current.doFocus().
+
+### React.forwardRef
+Создаёт React компонент, который перенаправляет атрибут ref, что он получает, другому компоненту ниже в дереве.
+React.forwardRef принимает функцию рендера в качестве аргумента. 
+React будет вызывать эту функцию с пропсами и рефом в качестве двух аргументов. Эта функция должна возвращать узел React.
+
+forwardRef принимает функцию рендера в качестве аргумента:
+
+```jsx harmony
+FancyInput = forwardRef(FancyInput);
+
+function Parent (props) {
+    const fancyRef = useRef();
+
+    // можно обратиться к input
+    return <FancyButton ref={fancyRef}>Click me!</FancyButton>;
+}
+```
+
+## useLayoutEffect
 useEffect работает синхронно и выполняется после обновления контента на странице:
 -   запускается функция рендер
 -   страница обновлена
