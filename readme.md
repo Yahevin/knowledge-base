@@ -75,6 +75,7 @@
     * [MySQL](#MySQL)
     
     
+
 # HTML
 ## HTML Validation     
 HTML-валидатор производит несколько проверок Вашего кода. Основные из них:
@@ -2019,6 +2020,251 @@ Import dump:
 ```sql
 mysql -u username -p db_name < file.sql;
 ```
+**[⬆ back to top](#table-of-contents)**
+
+# Testing
+
+## Jest
+
+### Globals 
+Jest помещает каждый из этих методов и объектов в глобальную среду.
+```js
+// утилиты будут работать и без импорта
+import {describe, expect, test} from '@jest/globals'
+```
+
+#### Expect
+expect(value) используется вместе с функцией «сопоставления», чтобы проверить некоторое утверждение относительно value.
+
+```js
+const bestFlavor = () => 'grapefruit';
+
+it('the best flavor is grapefruit', () => {
+  expect(bestFlavor()).toBe('grapefruit');
+});
+```
+
+#### test(name, fn, timeout)
+it/fit/xit/test/xtest - запускает унитарный тест
+
+```js
+test('will be ran', () => {
+  expect(1 + 1).toBe(2);
+});
+```
+
+#### describe(name, fn)
+Создает группу, объединяющую несколько связанных тестов
+
+```js
+const myBeverage = {
+  delicious: true,
+  sour: false,
+};
+
+describe('my beverage', () => {
+  it('is delicious', () => {
+    expect(myBeverage.delicious).toBeTruthy();
+  });
+
+  it('is not sour', () => {
+    expect(myBeverage.sour).toBeFalsy();
+  });
+});
+```
+
+#### testing callback
+Запускает функцию до/после завершения каждого/всех тестов в этом файле. Если функция возвращает promise или является генератором, 
+Jest дождется его выполнения.
+
+* afterAll(fn, timeout)
+* afterEach(fn, timeout)
+* beforeAll(fn, timeout)
+* beforeEach(fn, timeout)
+
+```js
+afterEach(() => {
+  cleanUpDatabase();
+});
+
+it(...)
+
+it(...)
+```
+
+### Mock Functions
+Моки позволяют следить за поведением функции, которая косвенно вызывается другим кодом
+
+#### jest.fn(implementation)
+Позволяет замокать возвращаемое значение функции
+
+```js
+function randomCall(fn) {
+  return fn(Math.random());
+}
+         
+test('randomCall calls its callback with a number', () => {
+  const myMock = jest.fn();
+  randomCall(myMock);
+
+  // Возвращает количество вызовов
+  expect(myMock).toBeCalledTimes(1);  
+  expect(myMock.mock.calls.length).toBe(1);
+
+  // Возвращает аргументы, с которыми была вызвана функция  
+  expect(myMock).toBeCalledWith(expect.any(Number));
+});
+```
+Все мокинг функции имеют специальное .mock свойство, в котором хранятся данные о том, как функция вызывалась. 
+.mock свойство также следит за значением this при каждом вызове для того, чтобы его было возможно изучить в дальнейшем:
+
+#### jest.spyOn(object, methodName, accessType?)
+Позволяет отслеживать вызовы и выполнение указываемой функции. 
+Кроме этого позволяет изменить тело исполнение функции для конкретного сценария.
+accessType - 'get' | 'set', указывает отслеживать геттер, либо сеттер.
+
+```typescript
+describe('spy on useContext', () => {
+  afterEach(() => {
+    // После каждого тесте сбрасывается замоканное выполнение функции
+    jest.spyOn(React, 'useContext').mockReset()
+  })
+
+  it('should use the dark theme', () => {
+    // Указываем значение, возвращаемое в этом тесте функцией React.useContext()
+    jest.spyOn(React, 'useContext').mockReturnValue({
+      theme: 'dark',
+    })
+
+    ...
+  })
+})
+``` 
+
+```js
+const audio = {
+  _volume: false,
+  // it's a setter!
+  set volume(value) {
+    this._volume = value;
+  },
+  get volume() {
+    return this._volume;
+  },
+};
+
+test('plays audio', () => {
+  const spy = jest.spyOn(audio, 'volume', 'set'); // we pass 'set'
+  audio.volume = 100;
+
+  expect(spy).toHaveBeenCalled(); // was called once
+  expect(audio.volume).toBe(100);
+
+  spy.mockRestore(); // clear the mock function
+});
+```
+**[⬆ back to top](#table-of-contents)**
+
+## Testing React
+
+### renderHook()
+npm install --save-dev @testing-library/react-hooks
+
+```typescript
+function renderHook(
+  callback: function(props?: any): any,
+  options?: RenderHookOptions
+): RenderHookResult
+
+RenderHookOptions {
+    // дефолтные значения передаваемые в качестве пропсов в тестируемую функцию
+    initialProps,
+    // компонент, в который оборачивается тестируемый компонент
+    wrapper
+}
+RenderHookResult {
+    result {
+       // значение, возращаемое из тестируемой функции
+       current: any,
+       error: Error
+    }
+    // функция, запускающая ререндер тестируемого компонента, 
+    // можно обновить initialProps, передав в качестве аргумента newProps
+    rerender(newProps?: any): void,
+    // размонтирование тестируемого компонента
+    unmount(): void
+}
+```
+
+```js
+// Пример кастомного хука, который нужно протестировать
+function useCounter() {
+  const [count, setCount] = useState(0)
+  const increment = useCallback(() => setCount((x) => x + 1), [])
+  
+  useEffect(increment)
+
+  return { count, increment }
+}
+
+test('should use counter', () => {
+  // Чтобы протестировать хук, сначала его нужно отрендерить
+  const { result, rerender } = renderHook(() => useCounter())
+
+  expect(result.current.count).toBe(0)
+  expect(typeof result.current.increment).toBe('function')
+  
+  // принудительно вызвает вызывает ререндер  
+  rerender() 
+
+  expect(result.current.count).toBe(1)
+})
+```
+
+### act
+Чтобы подготовить компонент к тестам, следует обернуть код, вызывающий рендер и обновление компонента, внутрь вызова act(). 
+Это приближает ваш тестовый прогон к тому, как React работает в браузере. 
+
+```js
+test('should increment counter', () => {
+  const { result } = renderHook(() => useCounter())
+
+  act(() => {
+    result.current.increment()
+  })
+  expect(result.current.count).toBe(1)
+})
+```
+
+### Test Renderer
+npm i react-test-renderer --save-dev
+
+Пакет позволяет рендерить React-компоненты в обычные JavaScript-объекты, не используя при этом DOM или мобильное окружение.
+Jest может искать в дереве конкретные узлы и проверять утверждения относительно них.
+[Официальная документация]('https://ru.reactjs.org/docs/test-renderer.html')
+
+
+```jsx harmony
+import TestRenderer from 'react-test-renderer';
+
+function Link(props) {
+  return <a href={props.page}>{props.children}</a>;
+}
+
+const testRenderer = TestRenderer.create(
+  <Link page="https://www.facebook.com/" foo="bar">Facebook</Link>
+);
+
+console.log(testRenderer.toJSON());
+// { type: 'a',
+//   props: { href: 'https://www.facebook.com/' },
+//   children: [ 'Facebook' ] }
+
+const testInstance = testRenderer.root;
+expect(testInstance.findByType(Link).props.foo).toBe('bar');
+```
+
+**[⬆ back to top](#table-of-contents)**
 
 
 
