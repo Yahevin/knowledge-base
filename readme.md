@@ -1329,7 +1329,7 @@ function MeasureExample() {
     <>
       <h1 ref={ref}>Привет, мир</h1>
       {rect !== null &&
-      <h2>Заголовок выше имеет высоту {Math.round(rect.height)} пикселей</h2>
+      <h2>Заголовок выше имеет высоту {Math.round(rect)} пикселей</h2>
       }
     </>
   );
