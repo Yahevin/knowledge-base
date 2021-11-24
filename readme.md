@@ -62,7 +62,7 @@
     * [useTrail](#usetrail)
     * [useTransition](#usetransition)
     * [useChain](#usechain) 
-    * [Height:auto](#height:auto)
+    * [Height:auto](#heightauto)
     * [Interpolate](#interpolate)
 1. [React Redux with TS](#React-Redux-with-TS)
     * [Connect](#connect)
