@@ -153,7 +153,7 @@ h1.titleClass {}
 :nth-of-type() {}
 
 /*Селектор псевдоэлемента*/
-:before, :after, :first-line, :first-letter {}
+::before, ::after, ::first-line, ::first-letter {}
 ```
 
 ## CSS Specificity
